@@ -1,0 +1,110 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>CityGML Viewer</title>
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'><rect x='4' y='12' width='8' height='16' fill='%2390a4b8'/><rect x='13' y='5' width='8' height='23' fill='%23e07a5f'/><rect x='22' y='15' width='6' height='13' fill='%2390a4b8'/></svg>" />
+  <link rel="stylesheet" href="/src/styles.css" />
+</head>
+<body>
+  <header class="toolbar">
+    <button class="btn panel-toggle" id="toggle-left" title="Show / hide layers and object tree">☰</button>
+    <div class="brand">
+      <svg viewBox="0 0 32 32" width="22" height="22" aria-hidden="true"><rect x="4" y="12" width="8" height="16" fill="#90a4b8"/><rect x="13" y="5" width="8" height="23" fill="#e07a5f"/><rect x="22" y="15" width="6" height="13" fill="#90a4b8"/></svg>
+      <span>CityGML Viewer</span>
+    </div>
+    <div class="tool-group">
+      <label class="btn primary" title="Open CityGML files (.gml, .xml)">
+        <input id="file-input" type="file" accept=".gml,.xml,.citygml" multiple hidden />
+        Open…
+      </label>
+      <select id="sample-select" class="btn" title="Load a sample from the GMLs folder" hidden>
+        <option value="">Samples…</option>
+      </select>
+      <button class="btn" id="btn-credits" title="Where the sample files come from and their licences" hidden>Sources</button>
+    </div>
+    <div class="tool-group">
+      <button class="btn" id="btn-fit" title="Fit all (Home)">Fit</button>
+      <button class="btn" id="btn-top" title="Top view">Top</button>
+      <button class="btn" id="btn-front" title="Front view">Front</button>
+      <button class="btn" id="btn-iso" title="Isometric view">Iso</button>
+    </div>
+    <div class="tool-group">
+      <label class="toggle"><input type="checkbox" id="chk-edges" checked /> Edges</label>
+      <label class="toggle"><input type="checkbox" id="chk-xray" /> X-ray</label>
+      <label class="toggle" title="Arrange files next to each other instead of at their real coordinates"><input type="checkbox" id="chk-side" /> Side by side</label>
+    </div>
+    <div class="tool-group section-tool">
+      <label class="toggle"><input type="checkbox" id="chk-clip" /> Section</label>
+      <input type="range" id="clip-range" min="0" max="1" step="0.01" value="1" disabled />
+      <span id="clip-value" class="mono muted">–</span>
+    </div>
+    <div class="tool-group right">
+      <button class="btn" id="btn-shot" title="Save a PNG screenshot">Screenshot</button>
+      <button class="btn panel-toggle" id="toggle-right" title="Show / hide properties">ⓘ</button>
+    </div>
+  </header>
+
+  <main class="layout">
+    <aside class="panel left" id="left-panel">
+      <section>
+        <h2>Files <span id="file-count" class="count"></span></h2>
+        <ul id="file-list" class="file-list"><li class="empty">No files loaded</li></ul>
+      </section>
+      <section>
+        <h2>Levels of detail</h2>
+        <div id="lod-list" class="chips"></div>
+      </section>
+      <section id="storey-section" hidden>
+        <h2 class="with-tools">Storeys
+          <span class="h-tools">
+            <button class="icon" id="storey-down" title="Storey below (PageDown)">▼</button>
+            <button class="icon" id="storey-up" title="Storey above (PageUp)">▲</button>
+          </span>
+        </h2>
+        <div id="storey-list" class="chips"></div>
+      </section>
+      <section>
+        <h2>Classes</h2>
+        <ul id="class-list" class="class-list"></ul>
+      </section>
+      <section class="grow">
+        <h2>Objects</h2>
+        <input id="search" type="search" placeholder="Search id, name, attribute…" />
+        <div id="tree" class="tree"></div>
+      </section>
+    </aside>
+
+    <div class="viewport" id="viewport">
+      <div class="empty-state" id="empty-state">
+        <div class="empty-card">
+          <h1>Drop CityGML files here</h1>
+          <p>or use <b>Open…</b> / <b>Samples…</b> in the toolbar. Supports CityGML 1.0, 2.0 and 3.0, LOD 0–4.</p>
+          <p class="muted small">Left-drag: orbit · Right-drag: pan · Wheel: zoom · Click: select · Double-click: zoom to object</p>
+        </div>
+      </div>
+      <div class="drop-overlay" id="drop-overlay">Drop to load</div>
+      <div class="loading" id="loading" hidden><div class="spinner"></div><span id="loading-text">Loading…</span></div>
+      <div class="statusbar" id="statusbar"></div>
+    </div>
+
+    <aside class="panel right" id="right-panel">
+      <section class="grow">
+        <h2>Properties</h2>
+        <div id="props" class="props"><p class="muted">Click an object in the view or the tree.</p></div>
+      </section>
+    </aside>
+  </main>
+
+  <dialog id="credits" class="credits" aria-labelledby="credits-title">
+    <header class="credits-head">
+      <h2 id="credits-title">Sample sources &amp; licences</h2>
+      <form method="dialog"><button class="icon" title="Close (Esc)" aria-label="Close">×</button></form>
+    </header>
+    <div id="credits-body" class="credits-body"></div>
+  </dialog>
+
+  <script type="module" src="/src/main.js"></script>
+</body>
+</html>

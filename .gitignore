@@ -1,0 +1,6 @@
+node_modules
+dist
+# personal test files, kept out of the repo and the build
+GMLs/
+# local Claude Code settings
+.claude/
