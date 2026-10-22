@@ -1,6 +1,6 @@
-# CityGML Viewer
+# CityLens — CityGML Viewer
 
-Browser-based 3D viewer for CityGML 1.0 / 2.0 / 3.0 files (LOD 0–4), built with Vite + Three.js.
+CityLens is a browser-based 3D viewer for CityGML 1.0 / 2.0 / 3.0 files (LOD 0–4), built with Vite + Three.js.
 
 ```bash
 npm install

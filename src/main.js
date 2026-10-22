@@ -789,7 +789,7 @@ $('chk-clip').onchange = applyClip;
 $('clip-range').oninput = applyClip;
 $('search').addEventListener('input', () => renderTree());
 $('btn-shot').onclick = () => {
-  const a = h('a', { href: viewer.screenshot(), download: 'citygml-view.png' });
+  const a = h('a', { href: viewer.screenshot(), download: 'citylens-view.png' });
   a.click();
 };
 

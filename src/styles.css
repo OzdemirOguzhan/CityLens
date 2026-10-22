@@ -37,7 +37,9 @@ body {
   border-bottom: 1px solid var(--line);
   flex-wrap: wrap;
 }
-.brand { display: flex; align-items: center; gap: 8px; font-weight: 600; font-size: 14px; margin-right: 8px; }
+.brand { display: flex; align-items: baseline; gap: 8px; font-weight: 600; font-size: 14px; margin-right: 8px; white-space: nowrap; }
+.brand svg { align-self: center; }
+.brand-sub { font-weight: 400; font-size: 12px; color: var(--muted); }
 .tool-group { display: flex; align-items: center; gap: 4px; padding: 0 8px; border-left: 1px solid var(--line); }
 .tool-group.right { margin-left: auto; border-left: none; }
 .section-tool input[type=range] { width: 160px; accent-color: var(--accent); }
@@ -287,6 +289,7 @@ body.hide-left .panel.left, body.hide-right .panel.right { display: none; }
 .md-table td:first-child code { white-space: nowrap; }
 
 @media (max-width: 1200px) {
+  .brand-sub { display: none; }
   .panel.left { width: 250px; }
   .panel.right { width: 280px; }
   .ttype { display: none; }
