@@ -152,6 +152,7 @@ function refreshAll() {
   renderTree();
   renderStatus();
   $('empty-state').hidden = state.models.length > 0;
+  document.body.classList.toggle('no-files', !state.models.length);
 }
 
 function renderFiles() {
@@ -710,6 +711,22 @@ if (sampleEntries.length) {
   $('btn-credits').hidden = false;
 }
 
+// Hand-picked samples offered as tiles on the empty screen.
+const FEATURED = [
+  { file: 'OGC-v3_FZK-Haus_LOD3_interior.gml', title: 'FZK-Haus', meta: 'LOD 3 · rooms & furniture' },
+  { file: 'OGC-v3_Opera-Lyon_LOD2.gml', title: 'Opéra de Lyon', meta: 'LOD 2 · real building' },
+  { file: 'citygml4j-v3_LOD2_Buildings.gml', title: '100 buildings', meta: 'LOD 2 · neighbourhood' },
+];
+const featured = FEATURED.map((f) => ({ ...f, entry: sampleEntries.find(([path]) => path === `/samples/${f.file}`) }))
+  .filter((f) => f.entry);
+if (featured.length) {
+  $('featured').hidden = false;
+  $('sample-tiles').append(...featured.map((f) => h('button', {
+    class: 'sample-tile', title: f.file, onclick: () => loadSamples([f.entry]),
+  }, h('span', { class: 'tile-title' }, f.title), h('span', { class: 'tile-meta' }, f.meta))));
+}
+$('empty-open').onclick = () => $('file-input').click();
+
 // Sources & licences dialog, rendered from samples/SOURCES.md on first open.
 const SAMPLE_LINKS = { 'LICENSE-Apache-2.0.txt': apacheLicenseUrl };
 $('btn-credits').onclick = () => {
@@ -725,7 +742,10 @@ sampleSelect.addEventListener('change', async () => {
   const v = sampleSelect.value;
   sampleSelect.value = '';
   if (!v) return;
-  const list = v === '*' ? sampleEntries : sampleEntries.filter(([path]) => path === v);
+  await loadSamples(v === '*' ? sampleEntries : sampleEntries.filter(([path]) => path === v));
+});
+
+async function loadSamples(list) {
   for (const [path, getUrl] of list) {
     const name = path.split('/').pop();
     showLoading(`Downloading ${name}…`);
@@ -742,7 +762,7 @@ sampleSelect.addEventListener('change', async () => {
     }
     await loadText(text, name);
   }
-});
+}
 
 const vp = $('viewport');
 let dragDepth = 0;

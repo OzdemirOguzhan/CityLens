@@ -361,7 +361,7 @@ export class Viewer {
     geom.computeBoundingBox();
     box.copy(geom.boundingBox);
     const mat = new THREE.MeshBasicMaterial({
-      color: 0xff9f1c,
+      color: 0xe040fb, // matches --sel; no semantic class colour is magenta
       transparent: true,
       opacity: 0.55,
       side: THREE.DoubleSide,
