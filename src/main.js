@@ -678,11 +678,14 @@ function renderOverview(div) {
     t.querySelector('summary').classList.add('file-title');
     div.append(t);
   }
-  div.append(table(state.models.length > 1 ? 'Classes (all files)' : 'Classes',
+  const classes = table(state.models.length > 1 ? 'Classes · polygons (all files)' : 'Classes · polygons',
     [...byClass].sort((a, b) => b[1] - a[1]).map(([c, n]) => [
-      h('span', { class: 'class-cell' }, h('span', { class: 'swatch', style: `background:${styleFor(c).color}` }), c),
-      `${n.toLocaleString()} polygons`,
-    ])));
+      h('span', { class: 'class-cell', title: c },
+        h('span', { class: 'swatch', style: `background:${styleFor(c).color}` }), h('span', { class: 'cname' }, c)),
+      n.toLocaleString(),
+    ]));
+  classes.classList.add('classes');
+  div.append(classes);
 }
 
 function table(title, rows) {
@@ -765,6 +768,11 @@ if (featured.length) {
   }, h('span', { class: 'tile-title' }, f.title), h('span', { class: 'tile-meta' }, f.meta))));
 }
 $('empty-open').onclick = () => $('file-input').click();
+
+// ?sample=<file name> opens a bundled sample directly, e.g. for demo links.
+const linkedSample = new URLSearchParams(location.search).get('sample');
+const linkedEntry = linkedSample && sampleEntries.find(([path]) => path === `/samples/${linkedSample}`);
+if (linkedEntry) loadSamples([linkedEntry]);
 
 // Sources & licences dialog, rendered from samples/SOURCES.md on first open.
 const SAMPLE_LINKS = { 'LICENSE-Apache-2.0.txt': apacheLicenseUrl };

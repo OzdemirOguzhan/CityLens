@@ -1,0 +1,47 @@
+<!doctype html>
+<!-- Source of public/og-image.png (1200×630), rendered by scripts/capture.mjs. -->
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<style>
+  * { box-sizing: border-box; }
+  html, body { margin: 0; width: 1200px; height: 630px; overflow: hidden; }
+  body {
+    background: radial-gradient(120% 140% at 0% 0%, #232a33 0%, #15191e 60%);
+    color: #dde3ea;
+    font-family: system-ui, 'Segoe UI', Roboto, sans-serif;
+    position: relative;
+  }
+  .text { position: absolute; left: 72px; top: 0; bottom: 0; width: 470px; display: flex; flex-direction: column; justify-content: center; }
+  .brand { display: flex; align-items: center; gap: 18px; }
+  .brand img { width: 76px; height: 76px; }
+  h1 { margin: 0; font-size: 68px; font-weight: 700; letter-spacing: -0.02em; }
+  .sub { margin: 18px 0 30px; font-size: 28px; line-height: 1.3; color: #b9c4cf; }
+  .chips { display: flex; flex-wrap: wrap; gap: 10px; }
+  .chip { padding: 8px 14px; border-radius: 999px; border: 1px solid #2e3640; background: #1c2128; font-size: 19px; color: #c9d2db; }
+  .chip.accent { border-color: #e07a5f; color: #f2a48d; }
+  .shot {
+    position: absolute; left: 590px; top: 70px; width: 820px; height: 490px;
+    border-radius: 16px; overflow: hidden; border: 1px solid #2e3640;
+    box-shadow: 0 30px 80px rgba(0, 0, 0, 0.55);
+    background: #e6ebf0 url('/docs/screenshot.png') no-repeat;
+    /* The screenshot is 1600×900; at 0.95× this frames the house between the side panels and above the status bar. */
+    background-size: 1520px 855px;
+    background-position: -331px -340px;
+  }
+</style>
+</head>
+<body>
+  <div class="text">
+    <div class="brand"><img src="/favicon.svg" alt="" /><h1>CityLens</h1></div>
+    <p class="sub">A CityGML viewer<br />that runs in your browser</p>
+    <div class="chips">
+      <span class="chip accent">CityGML 1.0 · 2.0 · 3.0</span>
+      <span class="chip">LOD 0–4</span>
+      <span class="chip">Storeys &amp; sections</span>
+      <span class="chip">Nothing uploaded</span>
+    </div>
+  </div>
+  <div class="shot"></div>
+</body>
+</html>

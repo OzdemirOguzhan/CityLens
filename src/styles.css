@@ -306,7 +306,10 @@ body.no-files .needs-files { display: none; }
 .ptable a:hover { text-decoration: underline; }
 .props-hint { margin: 0 0 10px; font-size: 12px; }
 .ptable summary.file-title { text-transform: none; letter-spacing: 0; color: var(--text); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-.class-cell { display: inline-flex; align-items: center; gap: 6px; }
+.class-cell { display: flex; align-items: center; gap: 6px; min-width: 0; }
+.class-cell .cname { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.ptable.classes th { width: 72%; }
+.ptable.classes td { text-align: right; font-variant-numeric: tabular-nums; }
 
 .statusbar .sel-chip {
   background: var(--sel-bg);
