@@ -3,12 +3,32 @@ import * as THREE from 'three';
 import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
 import { styleFor } from './colors.js';
 
+const SKY_TOP = '#d9e1e9';
+const SKY_BOTTOM = '#f0f2f4';
+const HORIZON = 0xe6ebf0; // between the two, since the far grid edge can sit anywhere on screen
+
+/** Soft vertical gradient used as the screen-space scene background. */
+function skyTexture() {
+  const c = document.createElement('canvas');
+  c.width = 2;
+  c.height = 256;
+  const g = c.getContext('2d');
+  const grad = g.createLinearGradient(0, 0, 0, c.height);
+  grad.addColorStop(0, SKY_TOP);
+  grad.addColorStop(1, SKY_BOTTOM);
+  g.fillStyle = grad;
+  g.fillRect(0, 0, c.width, c.height);
+  const tex = new THREE.CanvasTexture(c);
+  tex.colorSpace = THREE.SRGBColorSpace;
+  return tex;
+}
+
 export class Viewer {
   constructor(container) {
     this.container = container;
     this.models = [];
     this.materials = new Map();
-    this.edgeMaterial = new THREE.LineBasicMaterial({ color: 0x1d2228, transparent: true, opacity: 0.35 });
+    this.edgeMaterial = new THREE.LineBasicMaterial({ color: 0x1d2228, transparent: true, opacity: 0.35, fog: false });
     this.clipPlane = new THREE.Plane(new THREE.Vector3(0, 0, -1), 0);
     this.clipEnabled = false;
     this.xray = false;
@@ -21,7 +41,10 @@ export class Viewer {
     container.appendChild(this.renderer.domElement);
 
     this.scene = new THREE.Scene();
-    this.scene.background = new THREE.Color(0xe9edf1);
+    this.scene.background = skyTexture();
+    // Fog only touches the grid (model materials opt out), so the ground fades out instead of ending in a hard edge.
+    this.scene.fog = new THREE.Fog(HORIZON, 1, 1000);
+    this.gridHalf = 100;
 
     this.camera = new THREE.PerspectiveCamera(45, 1, 0.05, 100000);
     this.camera.up.set(0, 0, 1); // CityGML is Z-up
@@ -55,6 +78,7 @@ export class Viewer {
       requestAnimationFrame(loop);
       if (this.controls.update() || this._needsRender) {
         this._needsRender = false;
+        this.updateFog();
         this.renderer.render(this.scene, this.camera);
       }
     };
@@ -62,6 +86,13 @@ export class Viewer {
   }
 
   requestRender() { this._needsRender = true; }
+
+  /** Grid fades from the orbit target to its far edge, whatever the zoom. */
+  updateFog() {
+    const d = this.camera.position.distanceTo(this.controls.target);
+    this.scene.fog.near = d;
+    this.scene.fog.far = d + this.gridHalf;
+  }
 
   resize() {
     const w = this.container.clientWidth, h = this.container.clientHeight;
@@ -92,6 +123,7 @@ export class Viewer {
         polygonOffset: true,
         polygonOffsetFactor: 1,
         polygonOffsetUnits: 1,
+        fog: false,
       });
       m.userData.baseOpacity = st.opacity ?? 1;
       m.userData.model = model;
@@ -235,6 +267,7 @@ export class Viewer {
 
   setBackground(color) {
     this.scene.background = new THREE.Color(color);
+    this.scene.fog.color.set(color);
     this.requestRender();
   }
 
@@ -274,6 +307,7 @@ export class Viewer {
     this.grid.geometry.dispose();
     this.grid = new THREE.GridHelper(divisions * step, divisions, 0xb8c0c8, 0xd2d8de);
     this.grid.rotation.x = Math.PI / 2;
+    this.gridHalf = (divisions * step) / 2;
     const c = box.getCenter(new THREE.Vector3());
     this.grid.position.set(c.x, c.y, box.min.z - 0.02);
     this.scene.add(this.grid);
@@ -367,6 +401,7 @@ export class Viewer {
       side: THREE.DoubleSide,
       depthTest: !this.xray,
       depthWrite: false,
+      fog: false,
       polygonOffset: true,
       polygonOffsetFactor: -2,
       polygonOffsetUnits: -2,

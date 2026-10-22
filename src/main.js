@@ -156,6 +156,8 @@ function refreshAll() {
   renderStatus();
   $('empty-state').hidden = state.models.length > 0;
   document.body.classList.toggle('no-files', !state.models.length);
+  $('toggle-right').disabled = !state.models.length;
+  if (!state.selection) renderProps(); // the overview follows the loaded files
 }
 
 function renderFiles() {
@@ -594,7 +596,8 @@ function renderProps() {
   const div = $('props');
   div.replaceChildren();
   const s = state.selection;
-  if (!s) { div.append(h('p', { class: 'muted' }, 'Click an object in the view or the tree.')); return; }
+  $('props-title').textContent = s || !state.models.length ? 'Properties' : 'Overview';
+  if (!s) return renderOverview(div);
   const { model } = s;
   const o = model.objects[s.obj];
   const link = (idx) => h('a', {
@@ -652,6 +655,34 @@ function renderProps() {
     for (const k of kids) byType.set(k.type, (byType.get(k.type) || 0) + 1);
     div.append(table('Child summary', [...byType].map(([t, n]) => [t, String(n)])));
   }
+}
+
+// Shown while nothing is selected: what each file contains, and the classes by polygon count.
+function renderOverview(div) {
+  if (!state.models.length) return;
+  div.append(h('p', { class: 'muted props-hint' }, 'Click an object in the view or the tree to see its properties.'));
+  const byClass = new Map();
+  for (const m of state.models) {
+    const b = viewer.modelLocalBox(m);
+    const lods = [...new Set(m.buckets.map((k) => k.lod))].sort().map((l) => LOD_LABELS[l] || l);
+    for (const k of m.buckets) byClass.set(k.category, (byClass.get(k.category) || 0) + k.polygonCount);
+    const t = table(m.fileName, [
+      ['Version', `CityGML ${m.version}`],
+      ['CRS', m.srsName || 'not stated'],
+      ['Objects', m.objects.length.toLocaleString()],
+      ['Polygons', m.polygons.length.toLocaleString()],
+      ['LODs', lods.join(', ') || '–'],
+      ['Extent', `${(b.max.x - b.min.x).toFixed(1)} × ${(b.max.y - b.min.y).toFixed(1)} × ${(b.max.z - b.min.z).toFixed(1)} m`],
+      m.storeys.length && ['Storeys', String(m.storeys.length)],
+    ].filter(Boolean));
+    t.querySelector('summary').classList.add('file-title');
+    div.append(t);
+  }
+  div.append(table(state.models.length > 1 ? 'Classes (all files)' : 'Classes',
+    [...byClass].sort((a, b) => b[1] - a[1]).map(([c, n]) => [
+      h('span', { class: 'class-cell' }, h('span', { class: 'swatch', style: `background:${styleFor(c).color}` }), c),
+      `${n.toLocaleString()} polygons`,
+    ])));
 }
 
 function table(title, rows) {
