@@ -2,6 +2,7 @@ import { Viewer } from './viewer.js';
 import { parseCityGML } from './parser.js';
 import { styleFor, LOD_LABELS } from './colors.js';
 import { renderMarkdown } from './markdown.js';
+import { icon, fillIcons } from './icons.js';
 import sourcesMd from '/samples/SOURCES.md?raw';
 import apacheLicenseUrl from '/samples/LICENSE-Apache-2.0.txt?url';
 
@@ -22,6 +23,8 @@ function h(tag, attrs = {}, ...children) {
   }
   return el;
 }
+
+fillIcons();
 
 const viewer = new Viewer($('viewport'));
 
@@ -168,8 +171,8 @@ function renderFiles() {
       }),
       h('span', { class: 'fname', title: m.fileName }, m.fileName),
       h('span', { class: 'muted small' }, `v${m.version}`),
-      h('button', { class: 'icon', title: 'Zoom to file', onclick: () => viewer.fitModel(m) }, '⌖'),
-      h('button', { class: 'icon', title: 'Remove', onclick: () => removeModel(m) }, '×'),
+      h('button', { class: 'icon', title: 'Zoom to file', 'aria-label': 'Zoom to file', onclick: () => viewer.fitModel(m) }, icon('focus', 14)),
+      h('button', { class: 'icon', title: 'Remove', 'aria-label': 'Remove', onclick: () => removeModel(m) }, icon('close', 14)),
     ));
   }
 }
@@ -376,19 +379,24 @@ function renderStatus() {
   const tris = state.models.reduce((s, m) => s + m.triangleCount, 0);
   const srs = [...new Set(state.models.map((m) => m.srsName).filter(Boolean))].join(', ') || 'unknown CRS';
   const crsCount = new Set(state.models.map((m) => m.srsName)).size;
+  const p = state.selection?.point;
   sb.replaceChildren(...[
-    h('span', { class: crsCount > 1 ? 'warn' : '', title: crsCount > 1 ? 'Files use different coordinate reference systems' : '' },
-      (crsCount > 1 ? '⚠ ' : '') + srs),
-    state.sideBySide && h('span', { class: 'note' }, 'Side-by-side layout (not georeferenced)'),
-    state.storey != null && h('span', { class: 'note' },
-      `Storey: ${storeyList().find((s) => s.key === state.storey)?.label ?? state.storey}`),
-    h('span', {}, `${objs.toLocaleString()} objects`),
-    h('span', {}, `${polys.toLocaleString()} polygons`),
-    h('span', {}, `${tris.toLocaleString()} triangles`),
-    h('span', { id: 'pick-coord', class: 'mono' }, state.selection?.point ? fmtPoint(state.selection.point) : ''),
-    state.selection && h('button', {
-      class: 'sel-chip', title: 'Show properties', onclick: () => setPanel('right', true),
-    }, objLabel(state.selection.model.objects[state.selection.obj])),
+    h('span', {
+      class: 'sb-crs' + (crsCount > 1 ? ' warn' : ''),
+      title: crsCount > 1 ? `Files use different coordinate reference systems: ${srs}` : srs,
+    }, crsCount > 1 && icon('warning', 12), h('span', { class: 'sb-crs-text' }, srs)),
+    state.sideBySide && h('span', { class: 'sb-badge' }, 'Side by side · not georeferenced'),
+    state.storey != null && h('span', { class: 'sb-badge' },
+      `Storey ${storeyList().find((s) => s.key === state.storey)?.label ?? state.storey}`),
+    h('span', { class: 'sb-counts' },
+      h('b', {}, objs.toLocaleString()), ' objects · ', h('b', {}, polys.toLocaleString()), ' polygons',
+      h('span', { class: 'sb-tris' }, ' · ', h('b', {}, tris.toLocaleString()), ' triangles')),
+    h('span', { class: 'sb-right' },
+      p && h('span', { class: 'sb-coord', title: 'Picked point in the source CRS' },
+        ...['x', 'y', 'z'].map((k, i) => [h('span', { class: 'k' }, k.toUpperCase()), (p[k] + state.origin[i]).toFixed(3)])),
+      state.selection && h('button', {
+        class: 'sel-chip', title: 'Show properties', onclick: () => setPanel('right', true),
+      }, objLabel(state.selection.model.objects[state.selection.obj]))),
   ].filter(Boolean));
 }
 
@@ -470,9 +478,9 @@ function fmtPoint(p) {
 // ---------------------------------------------------------------- tree
 
 const TYPE_ICON = {
-  Building: '🏢', BuildingPart: '🏢', Room: '▢', BuildingRoom: '▢', CityObjectGroup: '◫',
-  Door: '🚪', Window: '🪟', DoorSurface: '🚪', WindowSurface: '🪟',
-  BuildingInstallation: '⌂', IntBuildingInstallation: '⌂', GenericCityObject: '◇',
+  Building: 'building', BuildingPart: 'building', Room: 'room', BuildingRoom: 'room', CityObjectGroup: 'group',
+  Door: 'door', Window: 'window', DoorSurface: 'door', WindowSurface: 'window',
+  BuildingInstallation: 'installation', IntBuildingInstallation: 'installation', GenericCityObject: 'generic',
 };
 
 function objLabel(o) {
@@ -503,16 +511,16 @@ function treeNode(model, idx) {
     ondblclick: () => select({ model, obj: idx }, { zoom: true, fromTree: true }),
   },
   h('span', {
-    class: 'twisty' + (o.children.length ? '' : ' leaf'),
+    class: 'twisty' + (o.children.length ? '' : ' leaf') + (open ? ' open' : ''),
     onclick: (e) => {
       e.stopPropagation();
       if (open) state.expanded.delete(key); else state.expanded.add(key);
       renderTree();
     },
-  }, o.children.length ? (open ? '▾' : '▸') : ''),
+  }, o.children.length ? icon('chevron-right', 12) : ''),
   h('span', { class: 'swatch', style: `background:${styleFor(o.type).color}` }),
   h('span', { class: 'tlabel', title: `${o.type}  ${o.id || ''}` },
-    TYPE_ICON[o.type] ? TYPE_ICON[o.type] + ' ' : '', objLabel(o)),
+    TYPE_ICON[o.type] && icon(TYPE_ICON[o.type], 12), objLabel(o)),
   h('span', { class: 'ttype' }, o.type),
   );
   li.append(row);
