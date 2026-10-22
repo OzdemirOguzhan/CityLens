@@ -278,6 +278,31 @@ body.no-files .needs-files { display: none; }
 .sb-coord { font-family: var(--mono); color: #f2b8ff; font-variant-numeric: tabular-nums; }
 .sb-coord .k { color: var(--muted); margin: 0 4px 0 10px; }
 .sb-coord .k:first-child { margin-left: 0; }
+/* view cube (src/navcube.js); no filter or opacity here, they would flatten the 3D transforms */
+.navcube { position: absolute; top: 14px; right: 14px; width: 100px; height: 100px; z-index: 3; pointer-events: none; }
+.navcube-cube { position: absolute; left: 50%; top: 50%; transform-style: preserve-3d; }
+.navcube-face {
+  position: absolute;
+  left: -32px; top: -32px; width: 64px; height: 64px;
+  display: grid;
+  grid-template: 22% 56% 22% / 22% 56% 22%;
+  background: #232a33;
+  border: 1px solid #46515e;
+  backface-visibility: hidden;
+  pointer-events: auto;
+}
+.navcube-face.face-top { background: #2c3540; }
+.navcube-face.face-bottom { background: #1c2128; }
+.navcube-cell { all: unset; cursor: pointer; }
+.navcube-cell:hover { background: rgba(224, 122, 95, 0.7); }
+.navcube-label {
+  position: absolute; inset: 0;
+  display: grid; place-items: center;
+  font-size: 9.5px; font-weight: 600; letter-spacing: 0.06em; text-transform: uppercase;
+  color: #dde3ea;
+  pointer-events: none;
+}
+body.no-files .navcube { display: none; }
 /* Sized by the viewport, not the window, since the side panels take a varying share. */
 @container (max-width: 900px) { .sb-tris { display: none; } }
 

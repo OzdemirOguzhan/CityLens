@@ -24,7 +24,9 @@ npm run build    # static site in dist/
 - **Storey filter**: one floor at a time, from storey CityObjectGroups (MAKS `Kat`, or any group with a
   `storeyNumber`) or CityGML 3.0 `Storey` objects. Each file is clipped to its own storey's height band;
   picking a storey switches to LOD 4 and hides ceilings, and "All" restores the previous LODs and ceilings
-- Horizontal **section** plane for interiors (LOD4), **X-ray**, edges, Top/Front/Iso views, PNG screenshot
+- **View cube**: click a face for that side, an edge for the 45° view between two sides, a corner for the
+  isometric view (faces are named by compass direction: CityGML Y is north)
+- Horizontal **section** plane for interiors (LOD4), **X-ray**, edges, PNG screenshot
 - **Side by side** layout for files that are far apart or in different CRSs
 
 Shortcuts: `F` zoom to selection · `Esc` clear · `Home` fit · `X` X-ray · `E` edges · `PageUp`/`PageDown` storey up/down
@@ -43,6 +45,7 @@ Shortcuts: `F` zoom to selection · `Esc` clear · `Home` fit · `X` X-ray · `E
 - `src/viewer.js` – Three.js scene, materials, picking, highlighting, clipping
 - `src/main.js` – UI: panels, tree, properties, loading
 - `src/colors.js` – semantic colour scheme
+- `src/navcube.js` – CSS 3D view cube that follows the camera
 - `src/icons.js` – inline SVG icon set
 
 ## License

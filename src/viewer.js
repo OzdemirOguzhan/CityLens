@@ -76,10 +76,12 @@ export class Viewer {
     this.resize();
     const loop = () => {
       requestAnimationFrame(loop);
+      if (this._viewAnim) this._viewAnim(performance.now());
       if (this.controls.update() || this._needsRender) {
         this._needsRender = false;
         this.updateFog();
         this.renderer.render(this.scene, this.camera);
+        this.onRender?.();
       }
     };
     loop();
@@ -311,6 +313,28 @@ export class Viewer {
     const c = box.getCenter(new THREE.Vector3());
     this.grid.position.set(c.x, c.y, box.min.z - 0.02);
     this.scene.add(this.grid);
+    this.requestRender();
+  }
+
+  /** Swings the camera around the orbit target to look from `dir` (world space), keeping the distance. */
+  viewFrom(dir, duration = 350) {
+    const target = this.controls.target;
+    const offset = this.camera.position.clone().sub(target);
+    const dist = offset.length();
+    const from = offset.normalize();
+    const to = dir.clone().normalize();
+    // Straight up/down is degenerate for a Z-up orbit; nudge it so north stays at the top of the screen.
+    if (Math.abs(to.z) > 0.9999) to.set(0, -1e-4 * Math.sign(to.z), Math.sign(to.z)).normalize();
+    const turn = new THREE.Quaternion().setFromUnitVectors(from, to);
+    const start = performance.now();
+    this._viewAnim = (now) => {
+      const t = Math.min(1, (now - start) / duration);
+      const k = t < 0.5 ? 2 * t * t : 1 - (-2 * t + 2) ** 2 / 2; // ease in-out
+      const q = new THREE.Quaternion().slerpQuaternions(new THREE.Quaternion(), turn, k);
+      this.camera.position.copy(target).addScaledVector(from.clone().applyQuaternion(q), dist);
+      this.requestRender();
+      if (t >= 1) this._viewAnim = null;
+    };
     this.requestRender();
   }
 

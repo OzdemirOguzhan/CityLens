@@ -3,6 +3,7 @@ import { parseCityGML } from './parser.js';
 import { styleFor, LOD_LABELS } from './colors.js';
 import { renderMarkdown } from './markdown.js';
 import { icon, fillIcons } from './icons.js';
+import { createNavCube } from './navcube.js';
 import sourcesMd from '/samples/SOURCES.md?raw';
 import apacheLicenseUrl from '/samples/LICENSE-Apache-2.0.txt?url';
 
@@ -27,6 +28,7 @@ function h(tag, attrs = {}, ...children) {
 fillIcons();
 
 const viewer = new Viewer($('viewport'));
+createNavCube(viewer, $('viewport'));
 
 const state = {
   models: [],
@@ -844,9 +846,6 @@ narrowQuery.addEventListener('change', syncPanelButtons);
 syncPanelButtons();
 
 $('btn-fit').onclick =() => viewer.fitTo(viewer.visibleBox());
-$('btn-top').onclick = () => viewer.fitTo(viewer.visibleBox(), 'top');
-$('btn-front').onclick = () => viewer.fitTo(viewer.visibleBox(), 'front');
-$('btn-iso').onclick = () => viewer.fitTo(viewer.visibleBox(), 'iso');
 $('chk-edges').onchange = (e) => viewer.setEdges(e.target.checked);
 $('chk-xray').onchange = (e) => { viewer.setXray(e.target.checked); highlightSelection(false); };
 $('storey-up').onclick = () => stepStorey(1);
