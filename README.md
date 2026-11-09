@@ -17,13 +17,12 @@ npm run build    # static site in dist/
   `?sample=OGC-v3_FZK-Haus_LOD3_interior.gml`. Local test files in `GMLs/` are also listed during `npm run dev`,
   but are never part of the build
 - Semantic colouring (Roof / Wall / Floor / Ceiling / Door / Window / Room …), xlink-referenced geometry is drawn once
-- Toggle by **LOD** and by **class** (Alt+click = show only that one)
+- Toggle by **LOD** (buttons over the top left of the view) and by **class** (Alt+click = show only that one)
 - Object tree with search (id, name, attribute values)
 - File overview (version, CRS, counts, LODs, extent, classes) while nothing is selected
 - Click to pick: properties, generic attributes, group relations, polygon id, area and point in the source CRS
-- **Storey filter**: one floor at a time, from storey CityObjectGroups (MAKS `Kat`, or any group with a
-  `storeyNumber`) or CityGML 3.0 `Storey` objects. Each file is clipped to its own storey's height band;
-  picking a storey switches to LOD 4 and hides ceilings, and "All" restores the previous LODs and ceilings
+- **Storey filter** (CityGML 3.0 `Storey` objects): a lift-style picker under the view cube shows one floor at a time, ordered by `sortKey` or height. Each
+  file is clipped to its own storey's height band; picking a storey hides ceilings, and "All" restores them
 - **View cube**: click a face for that side, an edge for the 45° view between two sides, a corner for the
   isometric view (faces are named by compass direction: CityGML Y is north)
 - Horizontal **section** plane for interiors (LOD4), **X-ray**, edges, PNG screenshot

@@ -56,31 +56,18 @@
 
   <main class="layout">
     <aside class="panel left" id="left-panel">
-      <section>
+      <section id="files-section">
         <h2>Files <span id="file-count" class="count"></span></h2>
         <ul id="file-list" class="file-list"><li class="empty">No files loaded</li></ul>
-      </section>
-      <section class="needs-files">
-        <h2>Levels of detail</h2>
-        <div id="lod-list" class="chips"></div>
-      </section>
-      <section id="storey-section" hidden>
-        <h2 class="with-tools">Storeys
-          <span class="h-tools">
-            <button class="icon" id="storey-down" title="Storey below (PageDown)" aria-label="Storey below" data-icon="chevron-down" data-icon-size="14"></button>
-            <button class="icon" id="storey-up" title="Storey above (PageUp)" aria-label="Storey above" data-icon="chevron-up" data-icon-size="14"></button>
-          </span>
-        </h2>
-        <div id="storey-list" class="chips"></div>
-      </section>
-      <section class="needs-files">
-        <h2>Classes</h2>
-        <ul id="class-list" class="class-list"></ul>
       </section>
       <section class="needs-files grow">
         <h2>Objects</h2>
         <input id="search" type="search" placeholder="Search id, name, attribute…" />
         <div id="tree" class="tree"></div>
+      </section>
+      <section class="needs-files fold" data-fold="classes">
+        <h2 class="fold-head">Classes <span class="fold-sum count" id="class-sum"></span></h2>
+        <ul id="class-list" class="class-list"></ul>
       </section>
     </aside>
 
@@ -100,6 +87,13 @@
           </div>
           <p class="hint">Left-drag: orbit · Right-drag: pan · Wheel: zoom · Click: select · Double-click: zoom to object</p>
         </div>
+      </div>
+      <div class="view-bar view-lods" id="lod-list" role="group" aria-label="Levels of detail"></div>
+      <div class="view-bar view-storeys" id="storey-section" role="group" aria-label="Storeys" hidden>
+        <button class="vbtn" id="storey-all">All</button>
+        <button class="vbtn vbtn-step" id="storey-up" title="Storey above (PageUp)" aria-label="Storey above" data-icon="chevron-up" data-icon-size="14"></button>
+        <div id="storey-list" class="storey-list"></div>
+        <button class="vbtn vbtn-step" id="storey-down" title="Storey below (PageDown)" aria-label="Storey below" data-icon="chevron-down" data-icon-size="14"></button>
       </div>
       <div class="drop-overlay" id="drop-overlay">Drop to load</div>
       <div class="loading" id="loading" hidden><div class="spinner"></div><span id="loading-text">Loading…</span></div>

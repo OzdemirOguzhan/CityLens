@@ -37,8 +37,7 @@ const state = {
   catVisible: new Map(),
   selection: null, // { model, obj, poly, point }
   sideBySide: false,
-  storey: null, // active storey key (storey number as string) or null for all
-  savedLods: null, // LOD visibility to restore when leaving floor mode
+  storey: null, // active storey key (sortKey or height order, as string) or null for all
   ceilingsHidden: false, // floor mode hid CeilingSurface and should restore it on leaving
   expanded: new Set(), // tree node keys `${modelId}:${objIndex}`
 };
@@ -121,14 +120,13 @@ function removeModel(model) {
   state.models = state.models.filter((m) => m !== model);
   if (state.selection?.model === model) select(null);
   // Leave floor mode if no remaining file has the active storey; otherwise every file stays hidden
-  // and the storey chips (the only way out) disappear with the list.
+  // and the storey picker (the only way out) disappears with the list.
   if (state.storey != null && !storeyList().some((s) => s.key === state.storey)) setStorey(null);
   if (!state.models.length) {
     state.origin = null;
     state.lodVisible.clear();
     state.catVisible.clear();
     state.storey = null;
-    state.savedLods = null;
     state.ceilingsHidden = false;
   }
   refreshVisibility();
@@ -162,10 +160,44 @@ function refreshAll() {
   if (!state.selection) renderProps(); // the overview follows the loaded files
 }
 
+// Filter sections fold under their header; the choice is remembered per viewer. Classes starts
+// folded: the right panel's overview already lists them.
+const FOLD_KEY = 'citylens.fold';
+const FOLD_DEFAULTS = { classes: true };
+let folded = { ...FOLD_DEFAULTS };
+try { Object.assign(folded, JSON.parse(localStorage.getItem(FOLD_KEY) || '{}')); } catch { /* storage unavailable */ }
+
+for (const sec of document.querySelectorAll('section.fold')) {
+  const name = sec.dataset.fold;
+  const head = sec.querySelector('.fold-head');
+  head.prepend(h('span', { class: 'twisty' }, icon('chevron-right', 12)));
+  head.tabIndex = 0;
+  head.setAttribute('role', 'button');
+  const apply = () => {
+    sec.classList.toggle('closed', !!folded[name]);
+    head.setAttribute('aria-expanded', String(!folded[name]));
+  };
+  const toggle = () => {
+    folded[name] = !folded[name];
+    try { localStorage.setItem(FOLD_KEY, JSON.stringify(folded)); } catch { /* storage unavailable */ }
+    apply();
+  };
+  head.addEventListener('click', (e) => { if (!e.target.closest('button')) toggle(); });
+  head.addEventListener('keydown', (e) => {
+    if ((e.key === 'Enter' || e.key === ' ') && e.target === head) { e.preventDefault(); toggle(); }
+  });
+  apply();
+}
+
+/** "3/5" when some are hidden, "5" when all are shown. */
+const shownOf = (on, total) => (on < total ? `${on}/${total}` : String(total));
+
 function renderFiles() {
   const ul = $('file-list');
   ul.replaceChildren();
   $('file-count').textContent = state.models.length ? state.models.length : '';
+  // One file needs no "Files" header: its row says enough.
+  $('files-section').classList.toggle('single', state.models.length === 1);
   if (!state.models.length) { ul.append(h('li', { class: 'empty' }, 'No files loaded')); return; }
   for (const m of state.models) {
     ul.append(h('li', { class: m.visible ? '' : 'off' },
@@ -199,28 +231,27 @@ function renderLods() {
     if (!counts.has(l)) continue;
     const on = state.lodVisible.get(l) !== false;
     div.append(h('button', {
-      class: 'chip' + (on ? ' on' : ''),
-      title: `${counts.get(l)} polygons — click to toggle, Alt+click to show only this`,
+      class: 'vbtn' + (on ? ' on' : ''),
+      'aria-pressed': String(on),
+      title: `${LOD_LABELS[l] || l}: ${counts.get(l).toLocaleString()} polygons\nClick to toggle, Alt+click to show only this`,
       onclick: (e) => {
         if (e.altKey) for (const k of state.lodVisible.keys()) state.lodVisible.set(k, k === l);
         else state.lodVisible.set(l, !on);
-        state.savedLods = null; // a manual choice wins over the floor-mode restore
         refreshVisibility(); renderLods();
       },
-    }, LOD_LABELS[l] || l, h('span', { class: 'count' }, counts.get(l))));
+    }, LOD_LABELS[l] || l));
   }
-  if (!div.children.length) div.append(h('span', { class: 'muted small' }, '–'));
+  div.hidden = !div.children.length;
 }
 
 // ---------------------------------------------------------------- storeys
 
-const STOREY_CLASS = /^(kat|storey|floor|etage|geschoss|stockwerk)$/i;
 const STOREY_EPS = 0.05; // metres; keeps coplanar slabs of the next storey out of the band
 
 /**
- * Finds storeys: CityGML 3.0 bldg:Storey objects, or CityObjectGroups whose class is a storey
- * (e.g. MAKS "Kat") or that carry a storeyNumber attribute. Each storey gets a Z band from its
- * own geometry (or its members'), running up to the next storey's floor.
+ * Finds CityGML 3.0 bldg:Storey objects. Each storey gets a Z band from its own geometry (or its
+ * members'), running up to the next storey's floor. Storeys are ordered by the standard sortKey
+ * when present, otherwise by height.
  */
 function extractStoreys(model) {
   const objZ = new Map();
@@ -242,25 +273,18 @@ function extractStoreys(model) {
 
   const storeys = [];
   for (const o of model.objects) {
-    const cls = o.attributes.find((a) => a.name === 'class')?.value || '';
-    const numAttr = o.attributes.find((a) => /^storey_?(number|no)$/i.test(a.name));
-    const isStorey = o.type === 'Storey'
-      || (o.type === 'CityObjectGroup' && (STOREY_CLASS.test(cls) || numAttr));
-    if (!isStorey) continue;
+    if (o.type !== 'Storey') continue;
     const range = rangeOf(o.index);
     if (!range) continue;
-    let num = numAttr ? parseFloat(numAttr.value) : NaN;
-    if (Number.isNaN(num)) {
-      const m = (o.name || '').match(/(-?\d+)(?!.*\d)/);
-      if (m) num = parseInt(m[1], 10);
-    }
-    storeys.push({ obj: o.index, num, label: (o.name || '').replace(/_/g, ' ').trim(), zMin: range[0], zMax: range[1] });
+    const sortKey = parseFloat(o.attributes.find((a) => a.name === 'sortKey')?.value);
+    storeys.push({ obj: o.index, sortKey, label: (o.name || '').trim(), zMin: range[0], zMax: range[1] });
   }
   storeys.sort((a, b) => a.zMin - b.zMin);
+  const bySortKey = storeys.every((s) => !Number.isNaN(s.sortKey));
   storeys.forEach((s, i) => {
-    if (Number.isNaN(s.num)) s.num = i;
+    s.num = bySortKey ? s.sortKey : i;
     s.key = String(s.num);
-    if (!s.label) s.label = `Storey ${s.num}`;
+    if (!s.label) s.label = `Storey ${i + 1}`;
     const next = storeys.slice(i + 1).find((n) => n.zMin > s.zMin + STOREY_EPS);
     s.bottom = s.zMin - STOREY_EPS;
     s.top = next ? next.zMin - STOREY_EPS : s.zMax + STOREY_EPS;
@@ -298,14 +322,6 @@ function setStorey(key) {
   const entering = key != null && state.storey == null;
   const leaving = key == null && state.storey != null;
   state.storey = key;
-  if (entering && state.lodVisible.has('4')) {
-    // Floor mode: interiors are what make a single storey readable.
-    state.savedLods = new Map(state.lodVisible);
-    for (const k of state.lodVisible.keys()) state.lodVisible.set(k, k === '4');
-  } else if (leaving && state.savedLods) {
-    state.lodVisible = state.savedLods;
-    state.savedLods = null;
-  }
   // Ceilings cover the plan when looking down on a single storey.
   if (entering && state.catVisible.get('CeilingSurface')) {
     state.catVisible.set('CeilingSurface', false);
@@ -316,7 +332,6 @@ function setStorey(key) {
   }
   applyStoreyFilter();
   refreshVisibility();
-  renderLods();
   renderClasses();
   renderStoreys();
   renderStatus();
@@ -336,15 +351,21 @@ function renderStoreys() {
   const div = $('storey-list');
   div.replaceChildren();
   if (!list.length) return;
+  const all = $('storey-all');
+  all.classList.toggle('on', state.storey == null);
+  all.setAttribute('aria-pressed', String(state.storey == null));
   const multi = state.models.length > 1;
-  div.append(
-    h('button', { class: 'chip' + (state.storey == null ? ' on' : ''), onclick: () => setStorey(null) }, 'All'),
-    ...list.map((s) => h('button', {
-      class: 'chip' + (state.storey === s.key ? ' on' : ''),
+  // Like a lift panel: the top storey sits at the top.
+  div.append(...[...list].reverse().map((s) => {
+    const on = state.storey === s.key;
+    return h('button', {
+      class: 'vbtn' + (on ? ' on' : ''),
+      'aria-pressed': String(on),
       title: multi ? `${s.label} — present in ${s.files} of ${state.models.length} files` : s.label,
-      onclick: () => setStorey(state.storey === s.key ? null : s.key),
-    }, s.label, multi && s.files < state.models.length && h('span', { class: 'count' }, `${s.files}/${state.models.length}`))),
-  );
+      onclick: () => setStorey(on ? null : s.key),
+    }, h('span', { class: 'vbtn-text' }, s.label),
+    multi && s.files < state.models.length && h('span', { class: 'count' }, `${s.files}/${state.models.length}`));
+  }));
 }
 
 function renderClasses() {
@@ -352,6 +373,8 @@ function renderClasses() {
   ul.replaceChildren();
   const counts = countBy((b) => b.category);
   const cats = [...counts.keys()].sort((a, b) => counts.get(b) - counts.get(a));
+  $('class-sum').textContent = cats.length
+    ? shownOf(cats.filter((c) => state.catVisible.get(c) !== false).length, cats.length) : '';
   for (const c of cats) {
     const on = state.catVisible.get(c) !== false;
     ul.append(h('li', { class: on ? '' : 'off' },
@@ -391,7 +414,7 @@ function renderStatus() {
     }, crsCount > 1 && icon('warning', 12), h('span', { class: 'sb-crs-text' }, srs)),
     state.sideBySide && h('span', { class: 'sb-badge' }, 'Side by side · not georeferenced'),
     state.storey != null && h('span', { class: 'sb-badge' },
-      `Storey ${storeyList().find((s) => s.key === state.storey)?.label ?? state.storey}`),
+      storeyList().find((s) => s.key === state.storey)?.label ?? `Storey ${state.storey}`),
     h('span', { class: 'sb-counts' },
       h('b', {}, objs.toLocaleString()), ' objects · ', h('b', {}, polys.toLocaleString()), ' polygons',
       h('span', { class: 'sb-tris' }, ' · ', h('b', {}, tris.toLocaleString()), ' triangles')),
@@ -498,9 +521,63 @@ function renderTree() {
   if (q) return renderSearch(tree, q);
   for (const m of state.models) {
     const ul = h('ul', { class: 'tree-root' });
-    for (const r of m.roots) ul.append(treeNode(m, r));
+    appendChildren(ul, m, m.roots, 'root');
     tree.append(h('div', { class: 'tree-file' }, m.fileName), ul);
   }
+}
+
+/**
+ * Splits a sibling list into single objects and runs of the same CityGML type. A type is folded
+ * under one group row when it occurs more than once among siblings of mixed types; when every
+ * sibling has the same type the parent already acts as the group, so nothing is folded.
+ */
+function siblingGroups(model, ids) {
+  const byType = new Map();
+  for (const i of ids) {
+    const t = model.objects[i].type;
+    if (!byType.has(t)) byType.set(t, []);
+    byType.get(t).push(i);
+  }
+  if (byType.size < 2) return ids.map((i) => ({ obj: i }));
+  const out = [];
+  const emitted = new Set();
+  for (const i of ids) {
+    const t = model.objects[i].type;
+    const run = byType.get(t);
+    if (run.length < 2) out.push({ obj: i });
+    else if (!emitted.has(t)) { emitted.add(t); out.push({ type: t, ids: run }); }
+  }
+  return out;
+}
+
+const groupKey = (model, parentKey, type) => `${model.id}:${parentKey}:g:${type}`;
+
+function appendChildren(ul, model, ids, parentKey) {
+  for (const g of siblingGroups(model, ids)) {
+    ul.append(g.type ? groupNode(model, parentKey, g.type, g.ids) : treeNode(model, g.obj));
+  }
+}
+
+function groupNode(model, parentKey, type, ids) {
+  const key = groupKey(model, parentKey, type);
+  const open = state.expanded.has(key);
+  const toggle = () => {
+    if (open) state.expanded.delete(key); else state.expanded.add(key);
+    renderTree();
+  };
+  const li = h('li', { 'data-key': key, class: 'tree-group' });
+  li.append(h('div', { class: 'tree-row', onclick: toggle },
+    h('span', { class: 'twisty' + (open ? ' open' : '') }, icon('chevron-right', 12)),
+    h('span', { class: 'swatch', style: `background:${styleFor(type).color}` }),
+    h('span', { class: 'tlabel', title: `${ids.length} × ${type}` },
+      icon(TYPE_ICON[type] || 'group', 12), type, h('span', { class: 'tcount' }, ids.length)),
+  ));
+  if (open) {
+    const ul = h('ul');
+    for (const i of ids) ul.append(treeNode(model, i));
+    li.append(ul);
+  }
+  return li;
 }
 
 function treeNode(model, idx) {
@@ -530,7 +607,7 @@ function treeNode(model, idx) {
   li.append(row);
   if (open && o.children.length) {
     const ul = h('ul');
-    for (const c of o.children) ul.append(treeNode(model, c));
+    appendChildren(ul, model, o.children, idx);
     li.append(ul);
   }
   return li;
@@ -558,8 +635,15 @@ function renderSearch(tree, q) {
 }
 
 function revealInTree(model, idx) {
+  // Open every ancestor and the type group (if any) the path runs through at each level.
+  let c = idx;
   let p = model.objects[idx].parent;
-  while (p >= 0) { state.expanded.add(`${model.id}:${p}`); p = model.objects[p].parent; }
+  for (;;) {
+    state.expanded.add(groupKey(model, p >= 0 ? p : 'root', model.objects[c].type));
+    if (p < 0) break;
+    state.expanded.add(`${model.id}:${p}`);
+    c = p; p = model.objects[p].parent;
+  }
   renderTree();
   const row = $('tree').querySelector(`li[data-key="${model.id}:${idx}"] > .tree-row`);
   row?.scrollIntoView({ block: 'nearest' });
@@ -848,6 +932,7 @@ syncPanelButtons();
 $('btn-fit').onclick =() => viewer.fitTo(viewer.visibleBox());
 $('chk-edges').onchange = (e) => viewer.setEdges(e.target.checked);
 $('chk-xray').onchange = (e) => { viewer.setXray(e.target.checked); highlightSelection(false); };
+$('storey-all').onclick = () => setStorey(null);
 $('storey-up').onclick = () => stepStorey(1);
 $('storey-down').onclick = () => stepStorey(-1);
 $('chk-side').onchange =(e) => { state.sideBySide = e.target.checked; relayout(); };
