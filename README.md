@@ -31,6 +31,10 @@ npm run build    # static site in dist/
 Shortcuts: `F` zoom to selection · `Esc` clear · `Home` fit · `X` X-ray · `E` edges · `PageUp`/`PageDown` storey up/down
 
 ## Publishing
+- **GitHub Pages**: `.github/workflows/deploy.yml` builds and publishes the site on every push to `main` (or by hand
+  from the Actions tab). One-time setup: push the repository to GitHub, then set Settings → Pages → Build and
+  deployment → Source to **GitHub Actions**. The workflow passes the Pages address as `SITE_URL` (see below).
+- Node `^20.19.0 || >=22.12.0` (what Vite 8 needs); the workflow uses Node 22.
 - The build uses relative paths, so `dist/` works from any folder or sub-path (e.g. GitHub Pages).
 - Social previews need absolute URLs: build with the site's address to add `og:url` / `og:image`, e.g.
   `SITE_URL=https://<user>.github.io/<repo>/ npm run build`. Without it those two tags are simply left out.
