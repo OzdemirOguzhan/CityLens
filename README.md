@@ -1,7 +1,8 @@
 # <img src="public/favicon.svg" alt="" width="32" height="32" align="top" /> CityLens — CityGML Viewer
 
 CityLens is a browser-based 3D viewer for CityGML 1.0 / 2.0 / 3.0 files (LOD 0–4), built with Vite + Three.js.
-Files are read locally in the browser and never uploaded.
+Files are read locally in the browser and never uploaded. The public site counts page views with Cloudflare Web
+Analytics (no cookies, no personal data); it never sees the files you open.
 
 ![CityLens showing the FZK-Haus sample cut open by a section plane, with the object tree and file overview](docs/screenshot.png)
 
@@ -41,6 +42,9 @@ Shortcuts: `F` zoom to selection · `Esc` clear · `Home` fit · `X` X-ray · `E
 - `npm run capture` (with `npm run dev` running) re-renders `docs/screenshot.png`, `public/og-image.png` and the
   PNG icons with a local headless Chrome or Edge (`CHROME=/path/to/browser` to pick one). The social card's layout
   is `scripts/social-card.html`; the icons come from `public/favicon.svg`.
+- **Visitor counts** (optional): add the site in Cloudflare → Web Analytics (manual JS snippet setup), then save the
+  token from the snippet as the repository variable `CF_BEACON_TOKEN` (Settings → Secrets and variables → Actions →
+  Variables) and re-run the deploy. Only builds with the variable include the beacon; `npm run dev` never does.
 - On GitHub, `public/og-image.png` can also be uploaded as the repository's social preview (Settings → General).
 
 ## Code
