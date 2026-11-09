@@ -1,0 +1,33 @@
+name: Bug report
+description: A file doesn't load, looks wrong, or something in the viewer misbehaves.
+labels: [bug]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thanks for taking the time to report this. Please don't attach files you aren't allowed to share publicly;
+        a description of the file (or a small cut-down sample) is fine.
+  - type: textarea
+    id: what
+    attributes:
+      label: What happened?
+      description: What did you do, what did you expect, and what did you see instead? Screenshots help.
+    validations:
+      required: true
+  - type: textarea
+    id: file
+    attributes:
+      label: The file
+      description: CityGML version (1.0 / 2.0 / 3.0), LOD, where it comes from, roughly how big. Attach or link it if you can.
+      placeholder: "CityGML 2.0, LOD2, 40 MB, from the Berlin 3D city model download"
+  - type: input
+    id: browser
+    attributes:
+      label: Browser and OS
+      placeholder: "Chrome 142 on Windows 11"
+  - type: textarea
+    id: console
+    attributes:
+      label: Console errors
+      description: Optional. Errors from the browser's developer console (F12 → Console).
+      render: text

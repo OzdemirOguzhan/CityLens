@@ -51,6 +51,11 @@ Shortcuts: `F` zoom to selection · `Esc` clear · `Home` fit · `X` X-ray · `E
 - `src/navcube.js` – CSS 3D view cube that follows the camera
 - `src/icons.js` – inline SVG icon set
 
+## Feedback & contact
+Found a file that doesn't render right, or missing a feature? [Open an issue](https://github.com/OzdemirOguzhan/CityLens/issues/new/choose)
+using the bug report or feature request form. The speech-bubble button in the app's toolbar and the link on the start
+screen lead there too. Pull requests are welcome.
+
 ## License
 The code is MIT licensed, see [LICENSE](LICENSE). The sample files in `samples/` are third-party data under their own
 terms (Apache-2.0, or no licence stated by the source); sources and details are in [samples/SOURCES.md](samples/SOURCES.md).

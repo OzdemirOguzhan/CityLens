@@ -8,7 +8,8 @@ const PATHS = {
   'chevron-up': '<path d="m6 15 6-6 6 6"/>',
   'chevron-down': '<path d="m6 9 6 6 6-6"/>',
   'chevron-right': '<path d="m9 6 6 6-6 6"/>',
-  warning: '<path d="M12 3 2 20h20z"/><path d="M12 10v4M12 17v.5"/>',
+  feedback: '<path d="M4 5h16v11H10l-4 4v-4H4z"/><path d="M8.5 10.5h.01M12 10.5h.01M15.5 10.5h.01"/>',
+  warning:'<path d="M12 3 2 20h20z"/><path d="M12 10v4M12 17v.5"/>',
   // object types in the tree
   building: '<path d="M5 21V3h9v18M14 8h5v13M3 21h18M8 7h3M8 11h3M8 15h3"/>',
   room: '<rect x="4" y="4" width="16" height="16" rx="1"/><path d="M4 14h6v6"/>',
